@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Problem Categorizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>College Student Problem Tracker</h1>
+            <p>Discover and categorize college student problems from Reddit using Perplexity AI</p>
+        </header>
+
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="subredditInput" placeholder="Enter college subreddit (e.g., college, university)" value="college">
+                <input type="text" id="apiKeyInput" placeholder="Enter your Perplexity API key" type="password">
+                <button id="fetchBtn">Fetch & Categorize</button>
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="Academic Stress">Academic</button>
+                <button class="filter-btn" data-category="Social & Relationships">Social</button>
+                <button class="filter-btn" data-category="Financial Struggles">Financial</button>
+                <button class="filter-btn" data-category="Mental Health">Mental Health</button>
+                <button class="filter-btn" data-category="Career Anxiety">Career</button>
+                <button class="filter-btn" data-category="Living Situations">Housing</button>
+                <button class="filter-btn" data-category="Other">Other</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Fetching Reddit posts and categorizing with AI...</p>
+        </div>
+
+        <div id="results" class="results">
+            <div class="stats">
+                <span id="totalCount">0</span> problems found
+            </div>
+            <div id="problemsList" class="problems-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
