@@ -2,7 +2,7 @@ class CollegeStudentProblemTracker {
     constructor() {
         this.problems = [];
         this.currentFilter = 'all';
-        this.collegeSubreddits = ['college', 'university', 'CollegeRant', 'ApplyingToCollege', 'college_advice', 'StudentLoans'];
+        this.apiKey = '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';
         this.init();
     }
 
@@ -24,29 +24,16 @@ class CollegeStudentProblemTracker {
     }
 
     async fetchAndCategorize() {
-        const subreddit = document.getElementById('subredditInput').value.trim();
-        const apiKey = document.getElementById('apiKeyInput').value.trim();
-
-        if (!subreddit) {
-            alert('Please enter a subreddit name');
-            return;
-        }
-
-        if (!apiKey) {
-            alert('Please enter your Perplexity API key');
-            return;
-        }
-
         this.showLoading(true);
         
         try {
-            const posts = await this.fetchRedditPosts(subreddit);
-            const categorizedProblems = await this.categorizeWithPerplexity(posts, apiKey);
+            const posts = await this.fetchRedditPosts('college');
+            const categorizedProblems = await this.categorizeWithPerplexity(posts, this.apiKey);
             this.problems = categorizedProblems;
             this.displayProblems();
         } catch (error) {
             console.error('Error:', error);
-            alert('Error fetching or categorizing posts. Please check your inputs and try again.');
+            alert('Error fetching or categorizing posts. Please try again.');
         } finally {
             this.showLoading(false);
         }

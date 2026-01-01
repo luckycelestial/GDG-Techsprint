@@ -1,40 +1,34 @@
-# College Student Problem Tracker
+# Setup Instructions
 
-A web app that fetches college student problems from Reddit and categorizes them using Perplexity AI.
+## Quick Start
+
+1. **Install Node.js** (if not installed): Download from nodejs.org
+
+2. **Install dependencies**:
+   ```
+   npm install
+   ```
+
+3. **Start the server**:
+   ```
+   npm start
+   ```
+
+4. **Open browser**: Go to `http://localhost:3000`
 
 ## Features
 
-- Fetches posts from college-focused subreddits
-- Uses Perplexity AI for intelligent categorization
-- Categories: Academic Stress, Social & Relationships, Financial Struggles, Mental Health, Career Anxiety, Living Situations
-- Clean, responsive web interface
-- GitHub Pages ready
+- **Real-time data** from r/college (most recent posts)
+- **Foolproof fetching** via local backend proxy
+- **Auto-refresh** every 30 seconds
+- **Live categorization** using Perplexity AI
+- **Time stamps** showing when posts were created
 
-## Setup
+## How it works
 
-1. Get a Perplexity API key from [perplexity.ai](https://perplexity.ai)
-2. Open `index.html` in your browser
-3. Enter a college subreddit (e.g., "college", "university", "CollegeRant")
-4. Enter your Perplexity API key
-5. Click "Fetch & Categorize"
+- Backend server (`server.js`) fetches from Reddit API
+- Frontend calls local backend (no CORS issues)
+- AI categorizes each post in real-time
+- Auto-refresh keeps data current
 
-## Recommended Subreddits
-
-- `college` - General college discussions
-- `university` - University-specific content
-- `CollegeRant` - Student complaints and issues
-- `ApplyingToCollege` - Application stress
-- `college_advice` - Academic guidance
-- `StudentLoans` - Financial struggles
-
-## Deploy to GitHub Pages
-
-1. Push files to your GitHub repository
-2. Go to Settings > Pages
-3. Select "Deploy from a branch"
-4. Choose "main" branch and "/ (root)"
-5. Your app will be live at `https://yourusername.github.io/repositoryname`
-
-## Note
-
-This app uses client-side Reddit API calls which may be limited by CORS. For production use, consider adding a backend proxy.
+This is the most reliable way to fetch Reddit data locally!
