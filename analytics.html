@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Problems Analytics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        h1 { 
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .pie-container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 40px;
+            padding: 20px;
+        }
+        .pie-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 200px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .legend-item:hover {
+            background: #f5f5f5;
+        }
+        .legend-item.selected {
+            background: #e3f2fd;
+        }
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+        }
+        .legend-text {
+            font-size: 14px;
+            color: #333;
+        }
+        .selected-info {
+            background: #667eea;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .time-container {
+            width: 100%;
+            height: 400px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        #timeCanvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+        .analytics-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            font-weight: 500;
+            color: #666;
+        }
+        .metric-value {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            padding: 20px 0;
+            border-top: 2px solid #f0f0f0;
+            margin-top: 20px;
+        }
+        .bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px 5px 0 0;
+            min-width: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .bar-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            text-align: center;
+            transform: rotate(-45deg);
+            white-space: nowrap;
+        }
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+        .trend-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .trend-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .trend-text {
+            flex: 1;
+        }
+        .trend-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .trend-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        .severity-high { border-left-color: #dc3545; }
+        .severity-medium { border-left-color: #ffc107; }
+        .severity-low { border-left-color: #28a745; }
+        .word-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            padding: 20px;
+        }
+        .word {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .word.large { font-size: 18px; }
+        .word.medium { font-size: 14px; }
+        .word.small { font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">← Back to Posts</button>
+            <h1>College Problems Analytics</h1>
+            <p>Comprehensive analysis of student problems and trends</p>
+        </div>
+
+        <div class="analytics-grid">
+            <!-- Pie Chart -->
+            <div class="analytics-card">
+                <h3 class="card-title">📊 Category Distribution</h3>
+                <div id="pie-chart" class="pie-container">
+                    <canvas id="pieCanvas" width="300" height="300"></canvas>
+                    <div id="pie-legend" class="pie-legend"></div>
+                </div>
+            </div>
+
+            <!-- Time Series Graph -->
+            <div class="analytics-card">
+                <h3 class="card-title">📈 Posts Over Time</h3>
+                <div id="selected-category" class="selected-info">Select a category from pie chart</div>
+                <div id="time-chart" class="time-container">
+                    <canvas id="timeCanvas" width="400" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Severity Analysis -->
+            <div class="analytics-card">
+                <h3 class="card-title">⚠️ Problem Severity</h3>
+                <div id="severity-analysis"></div>
+            </div>
+
+            <!-- Trending Issues -->
+            <div class="analytics-card">
+                <h3 class="card-title">🔥 Trending Issues</h3>
+                <div id="trending-issues"></div>
+            </div>
+
+            <!-- Time Analysis -->
+            <div class="analytics-card">
+                <h3 class="card-title">⏰ Posting Patterns</h3>
+                <div id="time-analysis"></div>
+            </div>
+
+            <!-- Common Keywords -->
+            <div class="analytics-card">
+                <h3 class="card-title">💬 Common Keywords</h3>
+                <div id="word-cloud" class="word-cloud"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let problemsData = [];
+
+        window.addEventListener('load', () => {
+            const storedData = localStorage.getItem('collegeProblemsData');
+            if (!storedData) {
+                alert('No data found. Please fetch data first.');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            problemsData = JSON.parse(storedData);
+            generateAnalytics();
+        });
+
+        let selectedCategory = null;
+        const categoryColors = {
+            'Academic Issues': '#FF6B6B',
+            'Financial Problems': '#4ECDC4', 
+            'Housing & Accommodation': '#45B7D1',
+            'Social & Relationships': '#96CEB4',
+            'Mental Health': '#FFEAA7',
+            'Food & Dining': '#DDA0DD',
+            'Transportation': '#98D8C8',
+            'Other': '#F7DC6F'
+        };
+
+        function generateAnalytics() {
+            generatePieChart();
+            generateSeverityAnalysis();
+            generateTrendingIssues();
+            generateTimeAnalysis();
+            generateWordCloud();
+        }
+
+        function generatePieChart() {
+            const categoryCounts = {};
+            problemsData.forEach(post => {
+                post.categories.forEach(category => {
+                    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+                });
+            });
+
+            const canvas = document.getElementById('pieCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 100;
+
+            const total = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
+            let currentAngle = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            Object.entries(categoryCounts).forEach(([category, count]) => {
+                const sliceAngle = (count / total) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = categoryColors[category];
+                ctx.fill();
+
+                currentAngle += sliceAngle;
+            });
+
+            const legendHTML = Object.entries(categoryCounts).map(([category, count]) => `
+                <div class="legend-item" onclick="selectCategory('${category}')" id="legend-${category.replace(/\s+/g, '-')}">
+                    <div class="legend-color" style="background: ${categoryColors[category]}"></div>
+                    <span class="legend-text">${category} (${count})</span>
+                </div>
+            `).join('');
+
+            document.getElementById('pie-legend').innerHTML = legendHTML;
+        }
+
+        function selectCategory(category) {
+            selectedCategory = category;
+            document.getElementById('selected-category').textContent = `📊 ${category} - Posts by Day`;
+            
+            // Update legend selection
+            document.querySelectorAll('.legend-item').forEach(item => item.classList.remove('selected'));
+            document.getElementById(`legend-${category.replace(/\s+/g, '-')}`).classList.add('selected');
+            
+            generateTimeChart(category);
+        }
+
+        function generateTimeChart(category) {
+            const canvas = document.getElementById('timeCanvas');
+            if (!canvas) return;
+            
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth - 40;
+            canvas.height = container.clientHeight - 40;
+            
+            const ctx = canvas.getContext('2d');
+            const categoryPosts = problemsData.filter(post => 
+                post.categories.includes(category)
+            );
+
+            const dayCounts = new Array(31).fill(0);
+            categoryPosts.forEach(post => {
+                const day = post.created.getDate();
+                dayCounts[day - 1]++;
+            });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const margin = 50;
+            const chartWidth = canvas.width - margin * 2;
+            const chartHeight = canvas.height - margin * 2;
+            const maxCount = Math.max(...dayCounts, 1);
+
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(margin, margin);
+            ctx.lineTo(margin, margin + chartHeight);
+            ctx.lineTo(margin + chartWidth, margin + chartHeight);
+            ctx.stroke();
+
+            // Draw line chart
+            ctx.strokeStyle = categoryColors[category];
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            dayCounts.forEach((count, day) => {
+                const x = margin + (day / 30) * chartWidth;
+                const y = margin + chartHeight - (count / maxCount) * chartHeight;
+                
+                if (day === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+
+            // Draw points
+            ctx.fillStyle = categoryColors[category];
+            dayCounts.forEach((count, day) => {
+                const x = margin + (day / 30) * chartWidth;
+                const y = margin + chartHeight - (count / maxCount) * chartHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            // Labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            for (let i = 1; i <= 31; i += 5) {
+                const x = margin + ((i-1) / 30) * chartWidth;
+                ctx.fillText(i.toString(), x, margin + chartHeight + 20);
+            }
+            
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= maxCount; i += Math.ceil(maxCount / 5) || 1) {
+                const y = margin + chartHeight - (i / maxCount) * chartHeight;
+                ctx.fillText(i.toString(), margin - 10, y + 4);
+            }
+        }
+
+        function generateSeverityAnalysis() {
+            const severityKeywords = {
+                high: ['failing', 'crisis', 'emergency', 'desperate', 'suicidal', 'broke', 'evicted'],
+                medium: ['struggling', 'difficult', 'worried', 'stressed', 'anxious', 'problem'],
+                low: ['advice', 'help', 'question', 'wondering', 'considering']
+            };
+
+            let highSeverity = 0, mediumSeverity = 0, lowSeverity = 0;
+
+            problemsData.forEach(post => {
+                const text = (post.title + ' ' + post.content).toLowerCase();
+                if (severityKeywords.high.some(keyword => text.includes(keyword))) {
+                    highSeverity++;
+                } else if (severityKeywords.medium.some(keyword => text.includes(keyword))) {
+                    mediumSeverity++;
+                } else {
+                    lowSeverity++;
+                }
+            });
+
+            document.getElementById('severity-analysis').innerHTML = `
+                <div class="trend-item severity-high">
+                    <span class="trend-icon">🚨</span>
+                    <div class="trend-text">
+                        <div class="trend-title">High Severity (${highSeverity})</div>
+                        <div class="trend-desc">Critical issues requiring immediate attention</div>
+                    </div>
+                </div>
+                <div class="trend-item severity-medium">
+                    <span class="trend-icon">⚠️</span>
+                    <div class="trend-text">
+                        <div class="trend-title">Medium Severity (${mediumSeverity})</div>
+                        <div class="trend-desc">Ongoing problems needing support</div>
+                    </div>
+                </div>
+                <div class="trend-item severity-low">
+                    <span class="trend-icon">💡</span>
+                    <div class="trend-text">
+                        <div class="trend-title">Low Severity (${lowSeverity})</div>
+                        <div class="trend-desc">General questions and advice seeking</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateTrendingIssues() {
+            const trendingTopics = [
+                { icon: '📚', title: 'Academic Pressure', desc: 'Grades, exams, and course difficulty' },
+                { icon: '💰', title: 'Financial Stress', desc: 'Tuition, loans, and living expenses' },
+                { icon: '🏠', title: 'Housing Issues', desc: 'Roommate conflicts and accommodation' },
+                { icon: '🧠', title: 'Mental Health', desc: 'Anxiety, depression, and stress management' }
+            ];
+
+            const trendingHTML = trendingTopics.map(topic => `
+                <div class="trend-item">
+                    <span class="trend-icon">${topic.icon}</span>
+                    <div class="trend-text">
+                        <div class="trend-title">${topic.title}</div>
+                        <div class="trend-desc">${topic.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('trending-issues').innerHTML = trendingHTML;
+        }
+
+        function generateTimeAnalysis() {
+            const hourCounts = new Array(24).fill(0);
+            problemsData.forEach(post => {
+                const hour = post.created.getHours();
+                hourCounts[hour]++;
+            });
+
+            const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
+            const avgPostsPerHour = Math.round(problemsData.length / 24);
+
+            document.getElementById('time-analysis').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Peak Activity Hour</span>
+                    <span class="metric-value">${peakHour}:00</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Avg Posts/Hour</span>
+                    <span class="metric-value">${avgPostsPerHour}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Most Active Period</span>
+                    <span class="metric-value">Evening</span>
+                </div>
+            `;
+        }
+
+        function generateWordCloud() {
+            const commonWords = ['help', 'problem', 'advice', 'college', 'student', 'need', 'struggling', 'money', 'class', 'roommate', 'stress', 'exam', 'grade', 'financial', 'housing'];
+            
+            const wordHTML = commonWords.map((word, index) => {
+                let sizeClass = 'small';
+                if (index < 3) sizeClass = 'large';
+                else if (index < 8) sizeClass = 'medium';
+                
+                return `<span class="word ${sizeClass}">${word}</span>`;
+            }).join('');
+
+            document.getElementById('word-cloud').innerHTML = wordHTML;
+        }
+    </script>
+</body>
+</html>

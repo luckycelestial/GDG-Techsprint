@@ -201,7 +201,7 @@
         
         <div class="controls">
             <button id="fetchBtn">Fetch Latest Problems</button>
-            <button id="autoRefresh">Auto Refresh (30s)</button>
+            <button id="analyzeBtn">Analyze Data</button>
         </div>
 
         <div class="navbar">
@@ -247,7 +247,15 @@
         ];
 
         document.getElementById('fetchBtn').addEventListener('click', fetchAndCategorize);
-        document.getElementById('autoRefresh').addEventListener('click', toggleAutoRefresh);
+        document.getElementById('analyzeBtn').addEventListener('click', () => {
+            if (allPosts.length === 0) {
+                alert('Please fetch data first!');
+                return;
+            }
+            // Store data in localStorage and redirect
+            localStorage.setItem('collegeProblemsData', JSON.stringify(allPosts));
+            window.location.href = 'analytics.html';
+        });
         
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -452,21 +460,6 @@
         function updateActiveTab(activeTab) {
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
             activeTab.classList.add('active');
-        }
-
-        function toggleAutoRefresh() {
-            const btn = document.getElementById('autoRefresh');
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-                btn.textContent = 'Auto Refresh (30s)';
-                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            } else {
-                autoRefreshInterval = setInterval(fetchAndCategorize, 30000);
-                btn.textContent = 'Stop Auto Refresh';
-                btn.style.background = '#28a745';
-                fetchAndCategorize();
-            }
         }
 
         function updateNavbarCounts() {
