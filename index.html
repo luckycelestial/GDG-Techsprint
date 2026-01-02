@@ -262,13 +262,18 @@
             document.getElementById('fetchBtn').disabled = true;
             
             try {
+                console.log('Starting fetch...');
                 const posts = await fetchRedditPosts();
+                console.log('Fetched posts:', posts.length, posts);
+                
                 allPosts = await categorizeProblems(posts);
+                console.log('All posts after categorization:', allPosts);
+                
                 displayPosts();
                 updateTimestamp();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('loading').innerHTML = '<p>Error: Make sure the server is running (npm start)</p>';
+                document.getElementById('loading').innerHTML = '<p>Error: ' + error.message + '</p>';
             } finally {
                 document.getElementById('fetchBtn').disabled = false;
             }
@@ -279,30 +284,35 @@
             if (!response.ok) throw new Error('Server error');
             
             const data = await response.json();
+            console.log('Total Reddit posts received:', data.data.children.length);
             
-            return data.data.children
+            const filtered = data.data.children
                 .map(post => post.data)
-                .filter(post => post.selftext && post.selftext.length > 30 && !post.stickied)
-                .slice(0, 20)
-                .map(post => ({
-                    title: post.title,
-                    content: post.selftext.substring(0, 400) + (post.selftext.length > 400 ? '...' : ''),
-                    author: post.author,
-                    score: post.score,
-                    created: new Date(post.created_utc * 1000)
-                }));
+                .filter(post => post.selftext && post.selftext.length > 30 && !post.stickied);
+            
+            console.log('Posts after filtering:', filtered.length);
+            
+            return filtered.map(post => ({
+                title: post.title,
+                content: post.selftext,
+                shortContent: post.selftext.substring(0, 300) + (post.selftext.length > 300 ? '...' : ''),
+                author: post.author,
+                score: post.score,
+                created: new Date(post.created_utc * 1000)
+            }));
         }
 
         async function categorizeProblems(posts) {
             const categorizedPosts = [];
             
             for (const post of posts) {
-                const categories = await categorizeWithAI(post);
+                // Skip AI for now, use fallback categorization
+                const categories = [fallbackCategorize(post)];
                 categorizedPosts.push({
                     ...post,
                     categories: categories
                 });
-                await new Promise(resolve => setTimeout(resolve, 300));
+                console.log('Categorized post:', post.title, 'as', categories);
             }
             
             return categorizedPosts;
@@ -371,42 +381,71 @@
             
             const container = document.getElementById('posts');
             container.innerHTML = '';
+            container.style.display = 'block';
+            container.style.background = '';
+            container.style.minHeight = '';
+            container.style.border = '';
             
             let filteredPosts = allPosts;
             if (currentFilter !== 'All') {
                 filteredPosts = allPosts.filter(post => post.categories.includes(currentFilter));
             }
             
-            const totalPosts = allPosts.length;
-            document.getElementById('stats').innerHTML = `Showing ${filteredPosts.length} of ${totalPosts} posts`;
-            document.getElementById('stats').style.display = 'block';
+            // Hide stats
+            document.getElementById('stats').style.display = 'none';
+            
+            // Update navbar with counts
+            updateNavbarCounts();
 
-            console.log('Displaying posts:', filteredPosts.length); // Debug
+            console.log('Displaying posts:', filteredPosts.length);
             
             if (filteredPosts.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No posts found. Click "Fetch Latest Problems" to load data.</div>';
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; background: white; border-radius: 10px;">No posts found.</div>';
                 return;
             }
 
             filteredPosts.forEach((post, index) => {
-                console.log('Creating post', index, post.title); // Debug
                 const postDiv = document.createElement('div');
-                postDiv.className = 'post';
+                postDiv.style.cssText = `
+                    background: white;
+                    border-radius: 15px;
+                    padding: 25px;
+                    margin-bottom: 20px;
+                    border: 2px solid #667eea;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    cursor: pointer;
+                `;
+                
+                const isExpanded = post.expanded || false;
+                const contentToShow = isExpanded ? post.content : post.shortContent;
+                const expandText = isExpanded ? 'Show Less' : 'Show More';
+                
                 postDiv.innerHTML = `
-                    <div class="post-title">${escapeHtml(post.title)}</div>
-                    <div class="post-content">${escapeHtml(post.content)}</div>
-                    <div class="post-meta">
-                        <div>
-                            <span>👤 u/${post.author}</span>
-                            <span style="margin-left: 15px;">⬆️ ${post.score}</span>
-                            <span style="margin-left: 15px;">🕒 ${formatTime(post.created)}</span>
-                        </div>
+                    <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 12px;">${escapeHtml(post.title)}</div>
+                    <div class="post-content-area" style="color: #666; line-height: 1.6; margin-bottom: 15px;">${escapeHtml(contentToShow)}</div>
+                    ${post.content.length > 300 ? `<div class="expand-btn" style="color: #667eea; font-size: 14px; font-weight: 600; margin-bottom: 15px; cursor: pointer;">${expandText}</div>` : ''}
+                    <div style="font-size: 13px; color: #999; margin-bottom: 15px;">
+                        <span>👤 u/${post.author}</span>
+                        <span style="margin-left: 15px;">⬆️ ${post.score}</span>
+                        <span style="margin-left: 15px;">🕒 ${formatTime(post.created)}</span>
                     </div>
-                    <div class="post-categories">
-                        ${post.categories.map(cat => `<span class="category-tag">${cat}</span>`).join('')}
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        ${post.categories.map(cat => `<span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px;">${cat}</span>`).join('')}
                     </div>
                 `;
+                
+                // Add click handler for expand/collapse
+                const expandBtn = postDiv.querySelector('.expand-btn');
+                if (expandBtn) {
+                    expandBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        post.expanded = !post.expanded;
+                        displayPosts(); // Refresh display
+                    });
+                }
+                
                 container.appendChild(postDiv);
+                console.log('Added post to container:', post.title);
             });
         }
 
@@ -428,6 +467,35 @@
                 btn.style.background = '#28a745';
                 fetchAndCategorize();
             }
+        }
+
+        function updateNavbarCounts() {
+            const categoryCounts = {
+                'All': allPosts.length,
+                'Academic Issues': 0,
+                'Financial Problems': 0,
+                'Housing & Accommodation': 0,
+                'Social & Relationships': 0,
+                'Mental Health': 0,
+                'Food & Dining': 0,
+                'Transportation': 0,
+                'Other': 0
+            };
+            
+            allPosts.forEach(post => {
+                post.categories.forEach(category => {
+                    if (categoryCounts[category] !== undefined) {
+                        categoryCounts[category]++;
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                const category = tab.dataset.category;
+                const count = categoryCounts[category] || 0;
+                const baseName = category === 'All' ? 'All' : category;
+                tab.textContent = `${baseName} (${count})`;
+            });
         }
 
         function updateTimestamp() {
