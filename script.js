@@ -2,261 +2,180 @@ class CollegeStudentProblemTracker {
     constructor() {
         this.problems = [];
         this.currentFilter = 'all';
-        this.apiKey = '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';
+        this.currentSeverityFilter = 'all';
+        this.summary = { total_posts: 0, high: 0, medium: 0, low: 0 };
         this.init();
     }
 
     init() {
         this.bindEvents();
-        this.loadSampleData();
+        this.loadDataFromBackend();
     }
 
     bindEvents() {
-        document.getElementById('fetchBtn').addEventListener('click', () => this.fetchAndCategorize());
-        
+        document.getElementById('fetchBtn').addEventListener('click', () => this.loadDataFromBackend());
+
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.filterProblems(e.target.dataset.category));
         });
 
-        document.getElementById('subredditInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.fetchAndCategorize();
+        document.querySelectorAll('.severity-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.filterBySeverity(e.target.dataset.severity));
         });
     }
 
-    async fetchAndCategorize() {
+    async loadDataFromBackend() {
         this.showLoading(true);
-        
+
         try {
-            const posts = await this.fetchRedditPosts('college');
-            const categorizedProblems = await this.categorizeWithPerplexity(posts, this.apiKey);
-            this.problems = categorizedProblems;
+            // Fetch posts and summary data from backend
+            const [postsResponse, summaryResponse] = await Promise.all([
+                fetch('http://localhost:5000/api/posts'),
+                fetch('http://localhost:5000/api/summary')
+            ]);
+
+            if (!postsResponse.ok || !summaryResponse.ok) {
+                throw new Error('Failed to fetch data from backend');
+            }
+
+            const posts = await postsResponse.json();
+            const summary = await summaryResponse.json();
+
+            // Transform backend data to frontend format
+            this.problems = posts.map(post => ({
+                title: post.title,
+                content: post.body,
+                category: post.category,
+                severity: post.severity,
+                severity_level: post.severity_level,
+                url: `https://reddit.com/r/college/${post.post_id}`,
+                score: post.score,
+                num_comments: post.num_comments,
+                created: new Date(post.created_utc * 1000)
+            }));
+
+            this.summary = summary;
+            this.updateSummaryDisplay();
             this.displayProblems();
+
         } catch (error) {
             console.error('Error:', error);
-            alert('Error fetching or categorizing posts. Please try again.');
+            alert('Error loading data from backend. Make sure the backend is running on port 5000.');
         } finally {
             this.showLoading(false);
         }
     }
 
-    async fetchRedditPosts(subreddit) {
-        const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`;
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to fetch Reddit posts');
-            
-            const data = await response.json();
-            
-            return data.data.children
-                .map(post => post.data)
-                .filter(post => 
-                    post.selftext && 
-                    post.selftext.length > 50 && 
-                    !post.stickied &&
-                    this.isCollegeProblemPost(post.title, post.selftext)
-                )
-                .slice(0, 15)
-                .map(post => ({
-                    title: post.title,
-                    content: post.selftext.substring(0, 500) + (post.selftext.length > 500 ? '...' : ''),
-                    url: `https://reddit.com${post.permalink}`,
-                    author: post.author,
-                    score: post.score,
-                    created: new Date(post.created_utc * 1000)
-                }));
-        } catch (error) {
-            console.error('Reddit API Error:', error);
-            throw new Error('Failed to fetch Reddit posts. The subreddit might not exist or be private.');
+    updateSummaryDisplay() {
+        // Update summary stats in the UI
+        const summaryElement = document.getElementById('summary');
+        if (summaryElement) {
+            summaryElement.style.display = 'flex';
+            summaryElement.innerHTML = `
+                <div class="summary-item">
+                    <span class="summary-label">Total Posts:</span>
+                    <span class="summary-value">${this.summary.total_posts}</span>
+                </div>
+                <div class="summary-item high">
+                    <span class="summary-label">High Severity:</span>
+                    <span class="summary-value">${this.summary.high}</span>
+                </div>
+                <div class="summary-item medium">
+                    <span class="summary-label">Medium Severity:</span>
+                    <span class="summary-value">${this.summary.medium}</span>
+                </div>
+                <div class="summary-item low">
+                    <span class="summary-label">Low Severity:</span>
+                    <span class="summary-value">${this.summary.low}</span>
+                </div>
+            `;
         }
-    }
-
-    isCollegeProblemPost(title, content) {
-        const collegeKeywords = [
-            'help', 'advice', 'struggling', 'stressed', 'anxious', 'worried', 'confused',
-            'failing', 'dropped out', 'can\'t afford', 'broke', 'debt', 'loans',
-            'roommate', 'dorm', 'professor', 'grade', 'exam', 'assignment',
-            'depression', 'lonely', 'homesick', 'overwhelmed', 'burnout',
-            'job', 'internship', 'major', 'career', 'graduate', 'what should i do'
-        ];
-        
-        const text = (title + ' ' + content).toLowerCase();
-        return collegeKeywords.some(keyword => text.includes(keyword));
-    }
-
-    async categorizeWithPerplexity(posts, apiKey) {
-        const categories = [
-            'Academic Stress',
-            'Social & Relationships', 
-            'Financial Struggles',
-            'Mental Health',
-            'Career Anxiety',
-            'Living Situations',
-            'Other'
-        ];
-
-        const categorizedProblems = [];
-
-        for (const post of posts) {
-            try {
-                const response = await fetch('https://api.perplexity.ai/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'llama-3.1-sonar-small-128k-online',
-                        messages: [{
-                            role: 'user',
-                            content: `Categorize this college student problem into exactly one of these categories: ${categories.join(', ')}. Respond with only the category name.\n\nProblem: ${post.title}\n\n${post.content}`
-                        }],
-                        max_tokens: 20,
-                        temperature: 0.1
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Perplexity API error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const category = data.choices[0].message.content.trim();
-                
-                categorizedProblems.push({
-                    ...post,
-                    category: categories.includes(category) ? category : 'Other'
-                });
-
-                await new Promise(resolve => setTimeout(resolve, 300));
-
-            } catch (error) {
-                console.error('Perplexity categorization error:', error);
-                categorizedProblems.push({
-                    ...post,
-                    category: this.fallbackCategorize(post.title, post.content)
-                });
-            }
-        }
-
-        return categorizedProblems;
-    }
-
-    fallbackCategorize(title, content) {
-        const text = (title + ' ' + content).toLowerCase();
-        
-        if (text.includes('grade') || text.includes('exam') || text.includes('study') || text.includes('professor') || text.includes('class')) {
-            return 'Academic Stress';
-        }
-        if (text.includes('friend') || text.includes('relationship') || text.includes('dating') || text.includes('social')) {
-            return 'Social & Relationships';
-        }
-        if (text.includes('money') || text.includes('loan') || text.includes('debt') || text.includes('afford') || text.includes('broke')) {
-            return 'Financial Struggles';
-        }
-        if (text.includes('depressed') || text.includes('anxiety') || text.includes('mental') || text.includes('therapy')) {
-            return 'Mental Health';
-        }
-        if (text.includes('job') || text.includes('career') || text.includes('internship') || text.includes('major')) {
-            return 'Career Anxiety';
-        }
-        if (text.includes('roommate') || text.includes('dorm') || text.includes('housing') || text.includes('apartment')) {
-            return 'Living Situations';
-        }
-        return 'Other';
-    }
-
-    loadSampleData() {
-        this.problems = [
-            {
-                title: "Failing calculus and might lose my scholarship",
-                content: "I'm a sophomore engineering major and I'm currently failing calculus 2. If I don't pass this class, I'll lose my academic scholarship...",
-                category: "Academic Stress",
-                url: "https://reddit.com/r/college/sample1",
-                author: "stressedstudent22",
-                score: 89,
-                created: new Date()
-            },
-            {
-                title: "Roommate never cleans and brings people over at 2am",
-                content: "My roommate is driving me crazy. They never do dishes, leave trash everywhere, and constantly have loud friends over...",
-                category: "Living Situations", 
-                url: "https://reddit.com/r/college/sample2",
-                author: "dormlife123",
-                score: 156,
-                created: new Date()
-            },
-            {
-                title: "Can't afford textbooks this semester",
-                content: "I'm already working 25 hours a week and taking out max loans. My textbooks cost $800 this semester and I just don't have it...",
-                category: "Financial Struggles",
-                url: "https://reddit.com/r/college/sample3", 
-                author: "brokecollegekid",
-                score: 234,
-                created: new Date()
-            },
-            {
-                title: "Feeling completely alone and homesick",
-                content: "I'm a freshman and I haven't made any real friends yet. Everyone seems to have their groups already and I feel so isolated...",
-                category: "Mental Health",
-                url: "https://reddit.com/r/college/sample4", 
-                author: "lonelyfreshman",
-                score: 67,
-                created: new Date()
-            }
-        ];
-        
-        this.displayProblems();
     }
 
     showLoading(show) {
-        document.getElementById('loading').classList.toggle('hidden', !show);
-        document.getElementById('fetchBtn').disabled = show;
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement) {
+            if (show) {
+                loadingElement.style.display = 'block';
+                loadingElement.classList.remove('hidden');
+            } else {
+                loadingElement.style.display = 'none';
+                loadingElement.classList.add('hidden');
+            }
+        }
+        const fetchBtn = document.getElementById('fetchBtn');
+        if (fetchBtn) {
+            fetchBtn.disabled = show;
+        }
     }
 
     filterProblems(category) {
         this.currentFilter = category;
-        
+
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.category === category);
         });
-        
+
+        this.displayProblems();
+    }
+
+    filterBySeverity(severity) {
+        this.currentSeverityFilter = severity;
+
+        document.querySelectorAll('.severity-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.severity === severity);
+        });
+
         this.displayProblems();
     }
 
     displayProblems() {
-        const filteredProblems = this.currentFilter === 'all' 
-            ? this.problems 
-            : this.problems.filter(p => p.category === this.currentFilter);
+        let filteredProblems = this.problems;
 
-        document.getElementById('totalCount').textContent = filteredProblems.length;
-        
+        // Apply category filter
+        if (this.currentFilter !== 'all') {
+            filteredProblems = filteredProblems.filter(p => p.category.toLowerCase() === this.currentFilter.toLowerCase());
+        }
+
+        // Apply severity filter
+        if (this.currentSeverityFilter !== 'all') {
+            filteredProblems = filteredProblems.filter(p => p.severity_level.toLowerCase() === this.currentSeverityFilter);
+        }
+
         const problemsList = document.getElementById('problemsList');
         problemsList.innerHTML = '';
 
         if (filteredProblems.length === 0) {
-            problemsList.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">No college problems found. Try fetching from subreddits like: college, university, CollegeRant</div>';
+            problemsList.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">No problems found matching the current filters.</div>';
             return;
         }
 
         filteredProblems.forEach(problem => {
             const problemElement = document.createElement('div');
             problemElement.className = 'problem-item';
-            
+
+            const severityClass = problem.severity_level.toLowerCase();
+            const severityIcon = {
+                'high': '🔴',
+                'medium': '🟡',
+                'low': '🟢'
+            }[severityClass] || '⚪';
+
             problemElement.innerHTML = `
                 <div class="problem-header">
                     <div class="problem-title">${this.escapeHtml(problem.title)}</div>
                     <div class="category-tag">${problem.category}</div>
+                    <div class="severity-tag ${severityClass}">${severityIcon} ${problem.severity_level}</div>
                 </div>
                 <div class="problem-content">${this.escapeHtml(problem.content)}</div>
                 <div class="problem-meta">
-                    <span>👤 u/${problem.author}</span>
                     <span>⬆️ ${problem.score}</span>
+                    <span>💬 ${problem.num_comments}</span>
                     <span>🕒 ${this.formatDate(problem.created)}</span>
                     <a href="${problem.url}" target="_blank" class="reddit-link">View on Reddit</a>
                 </div>
             `;
-            
+
             problemsList.appendChild(problemElement);
         });
     }
@@ -271,10 +190,10 @@ class CollegeStudentProblemTracker {
         const now = new Date();
         const diffMs = now - date;
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        
+
         if (diffHours < 1) return 'Just now';
         if (diffHours < 24) return `${diffHours}h ago`;
-        
+
         const diffDays = Math.floor(diffHours / 24);
         return `${diffDays}d ago`;
     }

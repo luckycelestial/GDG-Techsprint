@@ -6,15 +6,15 @@
     <title>College Problems Categorizer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f2f5;
             min-height: 100vh;
             padding: 20px;
         }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
             background: white;
             border-radius: 20px;
             overflow: hidden;
@@ -26,7 +26,7 @@
             text-align: center;
             color: white;
         }
-        h1 { 
+        h1 {
             font-size: 2.5rem;
             font-weight: 300;
             margin-bottom: 10px;
@@ -42,6 +42,63 @@
             gap: 15px;
             justify-content: center;
             flex-wrap: wrap;
+        }
+        .summary {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e1e5e9;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .summary-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .summary-item.high .summary-value { color: #dc3545; }
+        .summary-item.medium .summary-value { color: #ffc107; }
+        .summary-item.low .summary-value { color: #28a745; }
+        .severity-filters {
+            padding: 10px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e1e5e9;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .severity-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .severity-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .severity-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
         }
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -94,9 +151,9 @@
             padding: 30px;
             background: #f0f2f5;
         }
-        .loading { 
-            text-align: center; 
-            padding: 40px; 
+        .loading {
+            text-align: center;
+            padding: 40px;
             color: #667eea;
             font-size: 18px;
         }
@@ -113,25 +170,7 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .stats {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            font-size: 16px;
-            color: #666;
-        }
-        .sync-time {
-            color: #28a745;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        .posts-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .post {
+        .problem-item {
             background: white;
             border-radius: 15px;
             padding: 25px;
@@ -140,37 +179,25 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             transition: all 0.2s;
         }
-        .post:hover {
+        .problem-item:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.25);
             border-color: #667eea;
         }
-        .post-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-        .post-content {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        .post-meta {
+        .problem-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 15px;
-            font-size: 13px;
-            color: #999;
             flex-wrap: wrap;
             gap: 10px;
         }
-        .post-categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+        .problem-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+            min-width: 200px;
         }
         .category-tag {
             background: #667eea;
@@ -180,9 +207,48 @@
             font-size: 12px;
             font-weight: 500;
         }
-        .timestamp {
-            color: #28a745;
-            font-weight: 600;
+        .severity-tag {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .severity-tag.high {
+            background: #ffe6e6;
+            color: #dc3545;
+        }
+        .severity-tag.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .severity-tag.low {
+            background: #d4edda;
+            color: #155724;
+        }
+        .problem-content {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .problem-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #999;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .reddit-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .reddit-link:hover {
+            text-decoration: underline;
         }
         @media (max-width: 768px) {
             .container { margin: 10px; }
@@ -198,329 +264,41 @@
             <h1>College Problems Categorizer</h1>
             <p class="subtitle">Real-time analysis of problems from r/college</p>
         </div>
-        
+
         <div class="controls">
-            <button id="fetchBtn">Fetch Latest Problems</button>
-            <button id="analyzeBtn">Analyze Data</button>
+            <button id="fetchBtn">Load Data from Backend</button>
+        </div>
+
+        <div id="summary" class="summary" style="display: none;"></div>
+
+        <div class="severity-filters">
+            <button class="severity-btn active" data-severity="all">All Severities</button>
+            <button class="severity-btn" data-severity="high">High</button>
+            <button class="severity-btn" data-severity="medium">Medium</button>
+            <button class="severity-btn" data-severity="low">Low</button>
         </div>
 
         <div class="navbar">
             <div class="nav-tabs">
-                <button class="nav-tab active" data-category="All">All</button>
-                <button class="nav-tab" data-category="Academic Issues">Academic Issues</button>
-                <button class="nav-tab" data-category="Financial Problems">Financial Problems</button>
-                <button class="nav-tab" data-category="Housing & Accommodation">Housing & Accommodation</button>
-                <button class="nav-tab" data-category="Social & Relationships">Social & Relationships</button>
-                <button class="nav-tab" data-category="Mental Health">Mental Health</button>
-                <button class="nav-tab" data-category="Food & Dining">Food & Dining</button>
-                <button class="nav-tab" data-category="Transportation">Transportation</button>
-                <button class="nav-tab" data-category="Other">Other</button>
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="Academic">Academic</button>
+                <button class="filter-btn" data-category="Financial">Financial</button>
+                <button class="filter-btn" data-category="Mental Health">Mental Health</button>
+                <button class="filter-btn" data-category="Housing">Housing</button>
+                <button class="filter-btn" data-category="Other">Other</button>
             </div>
         </div>
-        
+
         <div class="content">
-            <div id="loading" class="loading" style="display: none;">
+            <div id="loading" class="loading hidden">
                 <div class="spinner"></div>
-                <p>Fetching latest posts from r/college and categorizing...</p>
+                <p>Loading data from backend...</p>
             </div>
-            
-            <div id="stats" class="stats" style="display: none;"></div>
-            <div id="posts" class="posts-container"></div>
+
+            <div id="problemsList"></div>
         </div>
     </div>
 
-    <script>
-        const API_KEY = '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';
-        let autoRefreshInterval = null;
-        let allPosts = [];
-        let currentFilter = 'All';
-        
-        const categoryNames = [
-            'Academic Issues',
-            'Financial Problems',
-            'Housing & Accommodation',
-            'Social & Relationships',
-            'Mental Health',
-            'Food & Dining',
-            'Transportation',
-            'Other'
-        ];
-
-        document.getElementById('fetchBtn').addEventListener('click', fetchAndCategorize);
-        document.getElementById('analyzeBtn').addEventListener('click', () => {
-            if (allPosts.length === 0) {
-                alert('Please fetch data first!');
-                return;
-            }
-            // Store data in localStorage and redirect
-            localStorage.setItem('collegeProblemsData', JSON.stringify(allPosts));
-            window.location.href = 'analytics.html';
-        });
-        
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                currentFilter = e.target.dataset.category;
-                updateActiveTab(e.target);
-                displayPosts();
-            });
-        });
-
-        async function fetchAndCategorize() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('fetchBtn').disabled = true;
-            
-            try {
-                console.log('Starting fetch...');
-                const posts = await fetchRedditPosts();
-                console.log('Fetched posts:', posts.length, posts);
-                
-                allPosts = await categorizeProblems(posts);
-                console.log('All posts after categorization:', allPosts);
-                
-                displayPosts();
-                updateTimestamp();
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('loading').innerHTML = '<p>Error: ' + error.message + '</p>';
-            } finally {
-                document.getElementById('fetchBtn').disabled = false;
-            }
-        }
-
-        async function fetchRedditPosts() {
-            const response = await fetch('http://localhost:3000/api/reddit/college');
-            if (!response.ok) throw new Error('Server error');
-            
-            const data = await response.json();
-            console.log('Total Reddit posts received:', data.data.children.length);
-            
-            const filtered = data.data.children
-                .map(post => post.data)
-                .filter(post => post.selftext && post.selftext.length > 30 && !post.stickied);
-            
-            console.log('Posts after filtering:', filtered.length);
-            
-            return filtered.map(post => ({
-                title: post.title,
-                content: post.selftext,
-                shortContent: post.selftext.substring(0, 300) + (post.selftext.length > 300 ? '...' : ''),
-                author: post.author,
-                score: post.score,
-                created: new Date(post.created_utc * 1000)
-            }));
-        }
-
-        async function categorizeProblems(posts) {
-            const categorizedPosts = [];
-            
-            for (const post of posts) {
-                // Skip AI for now, use fallback categorization
-                const categories = [fallbackCategorize(post)];
-                categorizedPosts.push({
-                    ...post,
-                    categories: categories
-                });
-                console.log('Categorized post:', post.title, 'as', categories);
-            }
-            
-            return categorizedPosts;
-        }
-
-        async function categorizeWithAI(post) {
-            try {
-                const response = await fetch('https://api.perplexity.ai/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: 'llama-3.1-sonar-small-128k-online',
-                        messages: [{
-                            role: 'user',
-                            content: `Analyze this college problem and list ALL applicable categories (can be multiple). Choose from: Academic Issues, Financial Problems, Housing & Accommodation, Social & Relationships, Mental Health, Food & Dining, Transportation, Other. Return as comma-separated list.\n\n${post.title}\n${post.content}`
-                        }],
-                        max_tokens: 30,
-                        temperature: 0.1
-                    })
-                });
-
-                if (!response.ok) return fallbackCategorize(post);
-
-                const data = await response.json();
-                const categoriesText = data.choices[0].message.content.trim();
-                const categories = categoriesText.split(',').map(cat => cat.trim()).filter(cat => categoryNames.includes(cat));
-                
-                return categories.length > 0 ? categories : [fallbackCategorize(post)];
-            } catch (error) {
-                return [fallbackCategorize(post)];
-            }
-        }
-
-        function fallbackCategorize(post) {
-            const text = (post.title + ' ' + post.content).toLowerCase();
-            
-            if (text.includes('grade') || text.includes('exam') || text.includes('study') || text.includes('class')) {
-                return 'Academic Issues';
-            }
-            if (text.includes('money') || text.includes('loan') || text.includes('debt') || text.includes('afford')) {
-                return 'Financial Problems';
-            }
-            if (text.includes('roommate') || text.includes('dorm') || text.includes('housing')) {
-                return 'Housing & Accommodation';
-            }
-            if (text.includes('friend') || text.includes('relationship') || text.includes('social')) {
-                return 'Social & Relationships';
-            }
-            if (text.includes('anxiety') || text.includes('stress') || text.includes('mental') || text.includes('depressed')) {
-                return 'Mental Health';
-            }
-            if (text.includes('food') || text.includes('meal') || text.includes('dining')) {
-                return 'Food & Dining';
-            }
-            if (text.includes('transport') || text.includes('bus') || text.includes('commute')) {
-                return 'Transportation';
-            }
-            return 'Other';
-        }
-
-        function displayPosts() {
-            document.getElementById('loading').style.display = 'none';
-            
-            const container = document.getElementById('posts');
-            container.innerHTML = '';
-            container.style.display = 'block';
-            container.style.background = '';
-            container.style.minHeight = '';
-            container.style.border = '';
-            
-            let filteredPosts = allPosts;
-            if (currentFilter !== 'All') {
-                filteredPosts = allPosts.filter(post => post.categories.includes(currentFilter));
-            }
-            
-            // Hide stats
-            document.getElementById('stats').style.display = 'none';
-            
-            // Update navbar with counts
-            updateNavbarCounts();
-
-            console.log('Displaying posts:', filteredPosts.length);
-            
-            if (filteredPosts.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666; background: white; border-radius: 10px;">No posts found.</div>';
-                return;
-            }
-
-            filteredPosts.forEach((post, index) => {
-                const postDiv = document.createElement('div');
-                postDiv.style.cssText = `
-                    background: white;
-                    border-radius: 15px;
-                    padding: 25px;
-                    margin-bottom: 20px;
-                    border: 2px solid #667eea;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    cursor: pointer;
-                `;
-                
-                const isExpanded = post.expanded || false;
-                const contentToShow = isExpanded ? post.content : post.shortContent;
-                const expandText = isExpanded ? 'Show Less' : 'Show More';
-                
-                postDiv.innerHTML = `
-                    <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 12px;">${escapeHtml(post.title)}</div>
-                    <div class="post-content-area" style="color: #666; line-height: 1.6; margin-bottom: 15px;">${escapeHtml(contentToShow)}</div>
-                    ${post.content.length > 300 ? `<div class="expand-btn" style="color: #667eea; font-size: 14px; font-weight: 600; margin-bottom: 15px; cursor: pointer;">${expandText}</div>` : ''}
-                    <div style="font-size: 13px; color: #999; margin-bottom: 15px;">
-                        <span>👤 u/${post.author}</span>
-                        <span style="margin-left: 15px;">⬆️ ${post.score}</span>
-                        <span style="margin-left: 15px;">🕒 ${formatTime(post.created)}</span>
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        ${post.categories.map(cat => `<span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px;">${cat}</span>`).join('')}
-                    </div>
-                `;
-                
-                // Add click handler for expand/collapse
-                const expandBtn = postDiv.querySelector('.expand-btn');
-                if (expandBtn) {
-                    expandBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        post.expanded = !post.expanded;
-                        displayPosts(); // Refresh display
-                    });
-                }
-                
-                container.appendChild(postDiv);
-                console.log('Added post to container:', post.title);
-            });
-        }
-
-        function updateActiveTab(activeTab) {
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            activeTab.classList.add('active');
-        }
-
-        function updateNavbarCounts() {
-            const categoryCounts = {
-                'All': allPosts.length,
-                'Academic Issues': 0,
-                'Financial Problems': 0,
-                'Housing & Accommodation': 0,
-                'Social & Relationships': 0,
-                'Mental Health': 0,
-                'Food & Dining': 0,
-                'Transportation': 0,
-                'Other': 0
-            };
-            
-            allPosts.forEach(post => {
-                post.categories.forEach(category => {
-                    if (categoryCounts[category] !== undefined) {
-                        categoryCounts[category]++;
-                    }
-                });
-            });
-            
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                const category = tab.dataset.category;
-                const count = categoryCounts[category] || 0;
-                const baseName = category === 'All' ? 'All' : category;
-                tab.textContent = `${baseName} (${count})`;
-            });
-        }
-
-        function updateTimestamp() {
-            const now = new Date();
-            const currentStats = document.getElementById('stats').innerHTML;
-            const baseStats = currentStats.split('<span class="sync-time">')[0];
-            document.getElementById('stats').innerHTML = baseStats + `<span class="sync-time">Last synced: ${now.toLocaleTimeString()}</span>`;
-        }
-
-        function formatTime(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / (1000 * 60));
-            
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            
-            const diffHours = Math.floor(diffMins / 60);
-            if (diffHours < 24) return `${diffHours}h ago`;
-            
-            const diffDays = Math.floor(diffHours / 24);
-            return `${diffDays}d ago`;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Auto-load on page load
-        window.addEventListener('load', fetchAndCategorize);
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
