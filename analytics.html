@@ -103,59 +103,14 @@
             margin-bottom: 0;
             border-top: 1px solid #ddd;
         }
-        .pie-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
+        .horizontal-chart-container {
+            padding: 20px;
+            width: 100%;
         }
-        .pie-wrapper {
-            position: relative;
-            flex-shrink: 0;
-        }
-        #pieCanvas {
+        #horizontalCanvas {
             display: block;
-        }
-        .pie-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-        }
-        .pie-legend.left {
-            align-items: flex-start;
-        }
-        .pie-legend.right {
-            align-items: flex-start;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            width: 100%;
             cursor: pointer;
-            padding: 12px;
-            border-radius: 8px;
-            transition: all 0.2s;
-            background: white;
-            border: 1px solid #e0e0e0;
-            white-space: nowrap;
-        }
-        .legend-item:hover {
-            background: #f5f5f5;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .legend-item.selected {
-            background: #e3f2fd;
-            border-color: #667eea;
-        }
-        .legend-color {
-            width: 18px;
-            height: 18px;
-            border-radius: 3px;
-        }
-        .legend-text {
-            font-size: 14px;
-            color: #333;
         }
         .selected-info {
             background: #667eea;
@@ -172,7 +127,6 @@
             background: white;
             border-radius: 8px;
             padding: 20px;
-            border: 1px solid #ddd;
         }
         #timeCanvas {
             width: 100% !important;
@@ -307,28 +261,20 @@
 
         <div class="combined-card">
         <div class="top-section">
-            <!-- Pie Chart -->
+            <!-- Horizontal Bar Chart -->
             <div>
                 <h3 class="card-title">📊 Category Distribution</h3>
-                <div id="pie-chart" class="pie-container">
-                    <div class="pie-wrapper">
-                        <canvas id="pieCanvas" width="300" height="300"></canvas>
-                    </div>
+                <div id="horizontal-chart" class="horizontal-chart-container">
+                    <canvas id="horizontalCanvas" width="400" height="350"></canvas>
                 </div>
             </div>
 
             <!-- Time Series Graph -->
             <div>
-                <h3 class="card-title">📈 Posts Over Time <span class="subtitle" id="selected-category">Select a category from pie chart</span></h3>
+                <h3 class="card-title">📈 Posts Over Time <span class="subtitle" id="selected-category">Click a bar to see posts over time</span></h3>
                 <div id="time-chart" class="time-container">
                     <canvas id="timeCanvas" width="400" height="250"></canvas>
                 </div>
-            </div>
-
-            <!-- Legends Section -->
-            <div class="legends-section">
-                <div id="pie-legend-left" class="pie-legend left"></div>
-                <div id="pie-legend-right" class="pie-legend right"></div>
             </div>
         </div>
         </div>
@@ -394,14 +340,31 @@
         };
 
         function generateAnalytics() {
-            generatePieChart();
+            generateHorizontalChart();
             generateSeverityAnalysis();
             generateTrendingIssues();
             generateTimeAnalysis();
             generateWordCloud();
+            
+            // Auto-select the top category
+            if (!selectedCategory) {
+                const categoryCounts = {};
+                problemsData.forEach(post => {
+                    post.categories.forEach(category => {
+                        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+                    });
+                });
+                const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0][0];
+                selectCategory(topCategory);
+            }
         }
 
-        function generatePieChart() {
+        let hoveredCategory = null;
+        let chartInitialized = false;
+        let canvasDisplayWidth = 0;
+        let canvasDisplayHeight = 450;
+
+        function generateHorizontalChart() {
             const categoryCounts = {};
             problemsData.forEach(post => {
                 post.categories.forEach(category => {
@@ -409,75 +372,177 @@
                 });
             });
 
-            const canvas = document.getElementById('pieCanvas');
+            const canvas = document.getElementById('horizontalCanvas');
+            const container = canvas.parentElement;
+            
+            // Only set canvas size once
+            if (!chartInitialized) {
+                const dpr = window.devicePixelRatio || 1;
+                canvasDisplayWidth = container.clientWidth;
+                canvas.width = canvasDisplayWidth * dpr;
+                canvas.height = canvasDisplayHeight * dpr;
+                canvas.style.width = canvasDisplayWidth + 'px';
+                canvas.style.height = canvasDisplayHeight + 'px';
+                chartInitialized = true;
+            }
+            
             const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = 100;
-
-            const total = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
-            let currentAngle = 0;
-            const slices = [];
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw pie slices
-            Object.entries(categoryCounts).forEach(([category, count]) => {
-                const sliceAngle = (count / total) * 2 * Math.PI;
-                const midAngle = currentAngle + sliceAngle / 2;
+            const dpr = window.devicePixelRatio || 1;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            
+            const categories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+            
+            const margin = { top: 40, right: 50, bottom: 20, left: 20 };
+            const chartWidth = canvasDisplayWidth - margin.left - margin.right;
+            const chartHeight = canvasDisplayHeight - margin.top - margin.bottom;
+            const barHeight = 30;
+            const barSpacing = 35;
+            
+            const maxCount = Math.max(...Object.values(categoryCounts));
+            
+            ctx.clearRect(0, 0, canvasDisplayWidth, canvasDisplayHeight);
+            
+            const bars = [];
+            const labels = [];
+            
+            categories.forEach(([category, count], index) => {
+                const y = margin.top + index * (barHeight + barSpacing);
+                const barWidth = (count / maxCount) * chartWidth;
+                const x = margin.left;
                 
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-                ctx.closePath();
+                const isSelected = selectedCategory === category;
+                const isHovered = hoveredCategory === category;
+                
+                // Draw category label (above the bar) with hover effect
+                ctx.fillStyle = isSelected ? '#667eea' : (isHovered ? '#764ba2' : '#333');
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'left';
+                const labelText = category;
+                
+                // Add background highlight on hover
+                const labelMetrics = ctx.measureText(labelText);
+                if (isHovered) {
+                    ctx.fillStyle = '#f0f0f0';
+                    ctx.fillRect(x - 2, y - 17, labelMetrics.width + 4, 16);
+                    ctx.fillStyle = '#764ba2';
+                }
+                
+                ctx.fillText(labelText, x, y - 5);
+                
+                // Store label info for click detection
+                labels.push({
+                    category,
+                    x: x - 2,
+                    y: y - 18,
+                    width: labelMetrics.width + 4,
+                    height: 18
+                });
+                
+                // Draw bar with highlight if selected or hovered
                 ctx.fillStyle = categoryColors[category];
-                ctx.fill();
-
-                slices.push({
+                ctx.globalAlpha = isSelected ? 1 : (isHovered ? 0.95 : 0.8);
+                ctx.fillRect(x, y, barWidth, barHeight);
+                ctx.globalAlpha = 1;
+                
+                // Add border if selected
+                if (isSelected) {
+                    ctx.strokeStyle = '#667eea';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x, y, barWidth, barHeight);
+                }
+                
+                // Add subtle shadow on hover
+                if (isHovered && !isSelected) {
+                    ctx.strokeStyle = '#764ba2';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, barWidth, barHeight);
+                }
+                
+                // Store bar info for click detection
+                bars.push({
                     category,
                     count,
-                    midAngle,
-                    color: categoryColors[category]
+                    x,
+                    y,
+                    width: barWidth,
+                    height: barHeight
                 });
-
-                currentAngle += sliceAngle;
-            });
-
-            // Split legends into left and right
-            const leftLegend = document.getElementById('pie-legend-left');
-            const rightLegend = document.getElementById('pie-legend-right');
-            leftLegend.innerHTML = '';
-            rightLegend.innerHTML = '';
-
-            const midPoint = Math.ceil(slices.length / 2);
-
-            slices.forEach((slice, index) => {
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
-                legendItem.id = `legend-${slice.category.replace(/\s+/g, '-')}`;
-                legendItem.onclick = () => selectCategory(slice.category);
                 
-                legendItem.innerHTML = `
-                    <div class="legend-color" style="background: ${slice.color}"></div>
-                    <span class="legend-text">${slice.category} (${slice.count})</span>
-                `;
-
-                if (index < midPoint) {
-                    leftLegend.appendChild(legendItem);
-                } else {
-                    rightLegend.appendChild(legendItem);
-                }
+                // Draw count outside the bar (to the right)
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(count, x + barWidth + 8, y + barHeight / 2 + 5);
             });
+            
+            // Add click event listener
+            canvas.onclick = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Check label clicks first
+                let clicked = false;
+                labels.forEach(label => {
+                    if (x >= label.x && x <= label.x + label.width &&
+                        y >= label.y && y <= label.y + label.height) {
+                        selectCategory(label.category);
+                        clicked = true;
+                    }
+                });
+                
+                // Check bar clicks if no label was clicked
+                if (!clicked) {
+                    bars.forEach(bar => {
+                        if (x >= bar.x && x <= bar.x + bar.width &&
+                            y >= bar.y && y <= bar.y + bar.height) {
+                            selectCategory(bar.category);
+                        }
+                    });
+                }
+            };
+            
+            // Change cursor on hover
+            canvas.onmousemove = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                let newHoveredCategory = null;
+                
+                // Check labels
+                labels.forEach(label => {
+                    if (x >= label.x && x <= label.x + label.width &&
+                        y >= label.y && y <= label.y + label.height) {
+                        newHoveredCategory = label.category;
+                    }
+                });
+                
+                // Check bars
+                if (!newHoveredCategory) {
+                    bars.forEach(bar => {
+                        if (x >= bar.x && x <= bar.x + bar.width &&
+                            y >= bar.y && y <= bar.y + bar.height) {
+                            newHoveredCategory = bar.category;
+                        }
+                    });
+                }
+                
+                // Redraw if hover state changed
+                if (newHoveredCategory !== hoveredCategory) {
+                    hoveredCategory = newHoveredCategory;
+                    generateHorizontalChart();
+                }
+                
+                canvas.style.cursor = hoveredCategory ? 'pointer' : 'default';
+            };
         }
 
         function selectCategory(category) {
             selectedCategory = category;
             document.getElementById('selected-category').textContent = `${category} - Posts by Day`;
-            
-            // Update legend selection
-            document.querySelectorAll('.legend-item').forEach(item => item.classList.remove('selected'));
-            document.getElementById(`legend-${category.replace(/\s+/g, '-')}`).classList.add('selected');
-            
+            generateHorizontalChart(); // Redraw to show highlight
             generateTimeChart(category);
         }
 
