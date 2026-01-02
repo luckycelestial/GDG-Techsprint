@@ -17,32 +17,43 @@
             margin: 0 auto; 
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
+            padding: 20px 30px;
             text-align: center;
-            color: white;
-            border-radius: 20px;
+            color: #333;
+            border-radius: 0;
             margin-bottom: 30px;
+            background: none;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
         }
         h1 { 
-            font-size: 2.5rem;
-            font-weight: 300;
-            margin-bottom: 10px;
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .header p {
+            font-size: 0.9rem;
+            color: #999;
+            margin: 0;
         }
         .back-btn {
             position: absolute;
-            top: 30px;
+            top: 20px;
             left: 30px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            background: transparent;
+            color: #667eea;
+            border: 1px solid #667eea;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s;
         }
         .back-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: #667eea;
+            color: white;
         }
         .analytics-grid {
             display: grid;
@@ -50,18 +61,72 @@
             gap: 25px;
             margin-bottom: 30px;
         }
+        .combined-card {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .top-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 25px;
+            grid-template-rows: auto auto;
+            margin-bottom: 0;
+        }
+        .top-section .analytics-card:nth-child(1) {
+            grid-column: 1;
+            grid-row: 1;
+            box-shadow: none;
+            border: none;
+        }
+        .top-section .analytics-card:nth-child(2) {
+            grid-column: 2;
+            grid-row: 1;
+            box-shadow: none;
+            border: none;
+        }
+        .legends-section {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: flex;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px 0 0 0;
+            background: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin-bottom: 0;
+            border-top: 1px solid #ddd;
+        }
         .pie-container {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 40px;
-            padding: 20px;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        .pie-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+        #pieCanvas {
+            display: block;
         }
         .pie-legend {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 15px;
-            min-width: 200px;
+            justify-content: center;
+        }
+        .pie-legend.left {
+            align-items: flex-start;
+        }
+        .pie-legend.right {
+            align-items: flex-start;
         }
         .legend-item {
             display: flex;
@@ -70,13 +135,18 @@
             cursor: pointer;
             padding: 12px;
             border-radius: 8px;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            background: white;
+            border: 1px solid #e0e0e0;
+            white-space: nowrap;
         }
         .legend-item:hover {
             background: #f5f5f5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .legend-item.selected {
             background: #e3f2fd;
+            border-color: #667eea;
         }
         .legend-color {
             width: 18px;
@@ -122,6 +192,12 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
+        }
+        .card-title .subtitle {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: #667eea;
+            margin-left: 10px;
         }
         .metric {
             display: flex;
@@ -226,28 +302,38 @@
     <div class="container">
         <div class="header">
             <button class="back-btn" onclick="window.location.href='index.html'">← Back to Posts</button>
-            <h1>College Problems Analytics</h1>
-            <p>Comprehensive analysis of student problems and trends</p>
+            <h1>Analytics</h1>
         </div>
 
-        <div class="analytics-grid">
+        <div class="combined-card">
+        <div class="top-section">
             <!-- Pie Chart -->
-            <div class="analytics-card">
+            <div>
                 <h3 class="card-title">📊 Category Distribution</h3>
                 <div id="pie-chart" class="pie-container">
-                    <canvas id="pieCanvas" width="300" height="300"></canvas>
-                    <div id="pie-legend" class="pie-legend"></div>
+                    <div class="pie-wrapper">
+                        <canvas id="pieCanvas" width="300" height="300"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Time Series Graph -->
-            <div class="analytics-card">
-                <h3 class="card-title">📈 Posts Over Time</h3>
-                <div id="selected-category" class="selected-info">Select a category from pie chart</div>
+            <div>
+                <h3 class="card-title">📈 Posts Over Time <span class="subtitle" id="selected-category">Select a category from pie chart</span></h3>
                 <div id="time-chart" class="time-container">
                     <canvas id="timeCanvas" width="400" height="250"></canvas>
                 </div>
             </div>
+
+            <!-- Legends Section -->
+            <div class="legends-section">
+                <div id="pie-legend-left" class="pie-legend left"></div>
+                <div id="pie-legend-right" class="pie-legend right"></div>
+            </div>
+        </div>
+        </div>
+
+        <div class="analytics-grid">
 
             <!-- Severity Analysis -->
             <div class="analytics-card">
@@ -287,19 +373,24 @@
             }
             
             problemsData = JSON.parse(storedData);
+            // Convert date strings back to Date objects
+            problemsData = problemsData.map(post => ({
+                ...post,
+                created: new Date(post.created)
+            }));
             generateAnalytics();
         });
 
         let selectedCategory = null;
         const categoryColors = {
-            'Academic Issues': '#FF6B6B',
-            'Financial Problems': '#4ECDC4', 
-            'Housing & Accommodation': '#45B7D1',
-            'Social & Relationships': '#96CEB4',
-            'Mental Health': '#FFEAA7',
-            'Food & Dining': '#DDA0DD',
-            'Transportation': '#98D8C8',
-            'Other': '#F7DC6F'
+            'Academic Issues': '#E74C3C',
+            'Financial Problems': '#16A085', 
+            'Housing & Accommodation': '#2980B9',
+            'Social & Relationships': '#27AE60',
+            'Mental Health': '#F39C12',
+            'Food & Dining': '#8E44AD',
+            'Transportation': '#D35400',
+            'Other': '#7F8C8D'
         };
 
         function generateAnalytics() {
@@ -326,11 +417,14 @@
 
             const total = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
             let currentAngle = 0;
+            const slices = [];
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Draw pie slices
             Object.entries(categoryCounts).forEach(([category, count]) => {
                 const sliceAngle = (count / total) * 2 * Math.PI;
+                const midAngle = currentAngle + sliceAngle / 2;
                 
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
@@ -339,22 +433,46 @@
                 ctx.fillStyle = categoryColors[category];
                 ctx.fill();
 
+                slices.push({
+                    category,
+                    count,
+                    midAngle,
+                    color: categoryColors[category]
+                });
+
                 currentAngle += sliceAngle;
             });
 
-            const legendHTML = Object.entries(categoryCounts).map(([category, count]) => `
-                <div class="legend-item" onclick="selectCategory('${category}')" id="legend-${category.replace(/\s+/g, '-')}">
-                    <div class="legend-color" style="background: ${categoryColors[category]}"></div>
-                    <span class="legend-text">${category} (${count})</span>
-                </div>
-            `).join('');
+            // Split legends into left and right
+            const leftLegend = document.getElementById('pie-legend-left');
+            const rightLegend = document.getElementById('pie-legend-right');
+            leftLegend.innerHTML = '';
+            rightLegend.innerHTML = '';
 
-            document.getElementById('pie-legend').innerHTML = legendHTML;
+            const midPoint = Math.ceil(slices.length / 2);
+
+            slices.forEach((slice, index) => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.id = `legend-${slice.category.replace(/\s+/g, '-')}`;
+                legendItem.onclick = () => selectCategory(slice.category);
+                
+                legendItem.innerHTML = `
+                    <div class="legend-color" style="background: ${slice.color}"></div>
+                    <span class="legend-text">${slice.category} (${slice.count})</span>
+                `;
+
+                if (index < midPoint) {
+                    leftLegend.appendChild(legendItem);
+                } else {
+                    rightLegend.appendChild(legendItem);
+                }
+            });
         }
 
         function selectCategory(category) {
             selectedCategory = category;
-            document.getElementById('selected-category').textContent = `📊 ${category} - Posts by Day`;
+            document.getElementById('selected-category').textContent = `${category} - Posts by Day`;
             
             // Update legend selection
             document.querySelectorAll('.legend-item').forEach(item => item.classList.remove('selected'));
@@ -398,48 +516,71 @@
             ctx.lineTo(margin + chartWidth, margin + chartHeight);
             ctx.stroke();
 
-            // Draw line chart
+            // Draw line chart - only for days with posts
             ctx.strokeStyle = categoryColors[category];
             ctx.lineWidth = 3;
             ctx.beginPath();
             
+            let firstPoint = true;
             dayCounts.forEach((count, day) => {
-                const x = margin + (day / 30) * chartWidth;
-                const y = margin + chartHeight - (count / maxCount) * chartHeight;
-                
-                if (day === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+                if (count > 0) {
+                    const x = margin + (day / 30) * chartWidth;
+                    const y = margin + chartHeight - (count / maxCount) * chartHeight;
+                    
+                    if (firstPoint) {
+                        ctx.moveTo(x, y);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
             });
             ctx.stroke();
 
-            // Draw points
+            // Draw points - only for days with posts
             ctx.fillStyle = categoryColors[category];
             dayCounts.forEach((count, day) => {
-                const x = margin + (day / 30) * chartWidth;
-                const y = margin + chartHeight - (count / maxCount) * chartHeight;
-                ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
+                if (count > 0) {
+                    const x = margin + (day / 30) * chartWidth;
+                    const y = margin + chartHeight - (count / maxCount) * chartHeight;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
             });
 
-            // Labels
+            // Labels - only show dates where posts exist
             ctx.fillStyle = '#666';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
             
-            for (let i = 1; i <= 31; i += 5) {
-                const x = margin + ((i-1) / 30) * chartWidth;
-                ctx.fillText(i.toString(), x, margin + chartHeight + 20);
-            }
+            dayCounts.forEach((count, day) => {
+                if (count > 0) {
+                    const x = margin + (day / 30) * chartWidth;
+                    ctx.fillText((day + 1).toString(), x, margin + chartHeight + 20);
+                }
+            });
             
             ctx.textAlign = 'right';
             for (let i = 0; i <= maxCount; i += Math.ceil(maxCount / 5) || 1) {
                 const y = margin + chartHeight - (i / maxCount) * chartHeight;
                 ctx.fillText(i.toString(), margin - 10, y + 4);
             }
+            
+            // Axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            
+            // X-axis label
+            ctx.fillText('Day of Month', margin + chartWidth / 2, canvas.height - 10);
+            
+            // Y-axis label
+            ctx.save();
+            ctx.translate(15, margin + chartHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Number of Posts', 0, 0);
+            ctx.restore();
         }
 
         function generateSeverityAnalysis() {
