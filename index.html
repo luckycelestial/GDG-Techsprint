@@ -397,6 +397,16 @@
             }
         });
         
+        // Enable category filters
+        document.querySelectorAll('.nav-tab[data-category]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                currentFilter = e.target.dataset.category;
+                updateActiveCategoryTab(e.target);
+                displayPosts();
+            });
+        });
+
+        // Enable severity filters
         document.querySelectorAll('.nav-tab[data-severity]').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 currentSeverityFilter = e.target.dataset.severity;
@@ -405,6 +415,11 @@
             });
         });
         
+        function updateActiveCategoryTab(activeTab) {
+            document.querySelectorAll('.nav-tab[data-category]').forEach(t => t.classList.remove('active'));
+            activeTab.classList.add('active');
+        }
+
         function updateActiveSeverityTab(activeTab) {
             document.querySelectorAll('.nav-tab[data-severity]').forEach(t => t.classList.remove('active'));
             activeTab.classList.add('active');
