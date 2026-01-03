@@ -230,7 +230,6 @@
     </div>
 
     <script>
-        const API_KEY = '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';
         let autoRefreshInterval = null;
         let allPosts = [];
         let currentFilter = 'All';
@@ -328,28 +327,24 @@
 
         async function categorizeWithAI(post) {
             try {
-                const response = await fetch('https://api.perplexity.ai/chat/completions', {
+                const response = await fetch('http://localhost:5000/api/categorize', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'llama-3.1-sonar-small-128k-online',
-                        messages: [{
-                            role: 'user',
-                            content: `Analyze this college problem and list ALL applicable categories (can be multiple). Choose from: Academic Issues, Financial Problems, Housing & Accommodation, Social & Relationships, Mental Health, Food & Dining, Transportation, Other. Return as comma-separated list.\n\n${post.title}\n${post.content}`
-                        }],
-                        max_tokens: 30,
-                        temperature: 0.1
+                        posts: [{
+                            title: post.title,
+                            content: post.content
+                        }]
                     })
                 });
 
                 if (!response.ok) return fallbackCategorize(post);
 
                 const data = await response.json();
-                const categoriesText = data.choices[0].message.content.trim();
-                const categories = categoriesText.split(',').map(cat => cat.trim()).filter(cat => categoryNames.includes(cat));
+                const category = data[0].category;
+                const categories = category.split(',').map(cat => cat.trim()).filter(cat => categoryNames.includes(cat));
                 
                 return categories.length > 0 ? categories : [fallbackCategorize(post)];
             } catch (error) {
