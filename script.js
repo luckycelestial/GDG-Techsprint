@@ -2,13 +2,12 @@ class CollegeStudentProblemTracker {
     constructor() {
         this.problems = [];
         this.currentFilter = 'all';
-        this.apiKey = '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';
         this.init();
     }
 
     init() {
         this.bindEvents();
-        this.loadSampleData();
+        this.fetchAndCategorize();
     }
 
     bindEvents() {
@@ -28,7 +27,7 @@ class CollegeStudentProblemTracker {
         
         try {
             const posts = await this.fetchRedditPosts('college');
-            const categorizedProblems = await this.categorizeWithPerplexity(posts, this.apiKey);
+            const categorizedProblems = await this.categorizeWithBackend(posts);
             this.problems = categorizedProblems;
             this.displayProblems();
         } catch (error) {
@@ -69,6 +68,27 @@ class CollegeStudentProblemTracker {
         }
     }
 
+    async categorizeWithBackend(posts) {
+        try {
+            const response = await fetch('http://localhost:5000/api/categorize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ posts })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to categorize posts');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Categorization error:', error);
+            throw new Error('Failed to categorize posts. Backend may be unavailable.');
+        }
+    }
+
     isCollegeProblemPost(title, content) {
         const collegeKeywords = [
             'help', 'advice', 'struggling', 'stressed', 'anxious', 'worried', 'confused',
@@ -80,88 +100,6 @@ class CollegeStudentProblemTracker {
         
         const text = (title + ' ' + content).toLowerCase();
         return collegeKeywords.some(keyword => text.includes(keyword));
-    }
-
-    async categorizeWithPerplexity(posts, apiKey) {
-        const categories = [
-            'Academic Stress',
-            'Social & Relationships', 
-            'Financial Struggles',
-            'Mental Health',
-            'Career Anxiety',
-            'Living Situations',
-            'Other'
-        ];
-
-        const categorizedProblems = [];
-
-        for (const post of posts) {
-            try {
-                const response = await fetch('https://api.perplexity.ai/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'llama-3.1-sonar-small-128k-online',
-                        messages: [{
-                            role: 'user',
-                            content: `Categorize this college student problem into exactly one of these categories: ${categories.join(', ')}. Respond with only the category name.\n\nProblem: ${post.title}\n\n${post.content}`
-                        }],
-                        max_tokens: 20,
-                        temperature: 0.1
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Perplexity API error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const category = data.choices[0].message.content.trim();
-                
-                categorizedProblems.push({
-                    ...post,
-                    category: categories.includes(category) ? category : 'Other'
-                });
-
-                await new Promise(resolve => setTimeout(resolve, 300));
-
-            } catch (error) {
-                console.error('Perplexity categorization error:', error);
-                categorizedProblems.push({
-                    ...post,
-                    category: this.fallbackCategorize(post.title, post.content)
-                });
-            }
-        }
-
-        return categorizedProblems;
-    }
-
-    fallbackCategorize(title, content) {
-        const text = (title + ' ' + content).toLowerCase();
-        
-        if (text.includes('grade') || text.includes('exam') || text.includes('study') || text.includes('professor') || text.includes('class')) {
-            return 'Academic Stress';
-        }
-        if (text.includes('friend') || text.includes('relationship') || text.includes('dating') || text.includes('social')) {
-            return 'Social & Relationships';
-        }
-        if (text.includes('money') || text.includes('loan') || text.includes('debt') || text.includes('afford') || text.includes('broke')) {
-            return 'Financial Struggles';
-        }
-        if (text.includes('depressed') || text.includes('anxiety') || text.includes('mental') || text.includes('therapy')) {
-            return 'Mental Health';
-        }
-        if (text.includes('job') || text.includes('career') || text.includes('internship') || text.includes('major')) {
-            return 'Career Anxiety';
-        }
-        if (text.includes('roommate') || text.includes('dorm') || text.includes('housing') || text.includes('apartment')) {
-            return 'Living Situations';
-        }
-        return 'Other';
     }
 
     loadSampleData() {
