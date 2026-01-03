@@ -106,11 +106,13 @@
         .horizontal-chart-container {
             padding: 20px;
             width: 100%;
+            overflow: visible;
         }
         #horizontalCanvas {
             display: block;
             width: 100%;
             cursor: pointer;
+            height: auto;
         }
         .selected-info {
             background: #667eea;
@@ -265,7 +267,7 @@
             <div>
                 <h3 class="card-title">📊 Category Distribution</h3>
                 <div id="horizontal-chart" class="horizontal-chart-container">
-                    <canvas id="horizontalCanvas" width="400" height="350"></canvas>
+                    <canvas id="horizontalCanvas" width="400" height="480"></canvas>
                 </div>
             </div>
 
@@ -362,7 +364,7 @@
         let hoveredCategory = null;
         let chartInitialized = false;
         let canvasDisplayWidth = 0;
-        let canvasDisplayHeight = 450;
+        let canvasDisplayHeight = 480;
 
         function generateHorizontalChart() {
             const categoryCounts = {};
