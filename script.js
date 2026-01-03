@@ -1,3 +1,8 @@
+// API Configuration - works for both local and Docker environments
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : `${window.location.protocol}//${window.location.hostname}:5000`;
+
 class CollegeStudentProblemTracker {
     constructor() {
         this.problems = [];
@@ -40,7 +45,7 @@ class CollegeStudentProblemTracker {
 
     async fetchRedditPosts(subreddit) {
         try {
-            const response = await fetch(`http://localhost:5000/api/reddit/${subreddit}`);
+            const response = await fetch(`${API_BASE_URL}/api/reddit/${subreddit}`);
             if (!response.ok) throw new Error('Failed to fetch Reddit posts from backend');
             
             const data = await response.json();
@@ -70,7 +75,7 @@ class CollegeStudentProblemTracker {
 
     async categorizeWithBackend(posts) {
         try {
-            const response = await fetch('http://localhost:5000/api/categorize', {
+            const response = await fetch(`${API_BASE_URL}/api/categorize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
