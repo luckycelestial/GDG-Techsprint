@@ -40,11 +40,9 @@ class CollegeStudentProblemTracker {
     }
 
     async fetchRedditPosts(subreddit) {
-        const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`;
-        
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to fetch Reddit posts');
+            const response = await fetch(`http://localhost:3000/api/reddit/${subreddit}`);
+            if (!response.ok) throw new Error('Failed to fetch Reddit posts from backend');
             
             const data = await response.json();
             
@@ -66,8 +64,8 @@ class CollegeStudentProblemTracker {
                     created: new Date(post.created_utc * 1000)
                 }));
         } catch (error) {
-            console.error('Reddit API Error:', error);
-            throw new Error('Failed to fetch Reddit posts. The subreddit might not exist or be private.');
+            console.error('Backend API Error:', error);
+            throw new Error('Failed to fetch Reddit posts. Make sure the backend server is running on port 3000.');
         }
     }
 
