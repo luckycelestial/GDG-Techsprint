@@ -11,7 +11,11 @@ app.use(express.static('.'));
 app.get('/api/reddit/:subreddit', async (req, res) => {
     try {
         const { subreddit } = req.params;
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=100`, {
+        const sort = ['hot', 'new', 'top', 'rising'].includes((req.query.sort || '').toLowerCase())
+            ? req.query.sort.toLowerCase()
+            : 'hot';
+
+        const response = await fetch(`https://www.reddit.com/r/${subreddit}/${sort}.json?limit=100`, {
             headers: {
                 'User-Agent': 'CollegeProblemTracker/1.0'
             }

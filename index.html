@@ -299,13 +299,15 @@
         <div class="navbar">
             <div class="nav-tabs">
                 <div class="dropdown-container">
-                    <button class="dropdown-btn" id="sortBtn">All</button>
+                    <button class="dropdown-btn" id="sortBtn">🔥 Hot</button>
                     <div class="dropdown-content" id="sortDropdown">
                         <div class="dropdown-item active" data-sort="hot">🔥 Hot</div>
                         <div class="dropdown-item" data-sort="new">✨ New</div>
-                        <div class="dropdown-item" data-sort="all">📋 All</div>
+                        <div class="dropdown-item" data-sort="top">⬆️ Top</div>
+                        <div class="dropdown-item" data-sort="rising">📈 Rising</div>
                     </div>
                 </div>
+                <button class="nav-tab" id="sortAllBox">📋 All</button>
                 <button class="nav-tab" data-category="Academic Issues">Academic Issues</button>
                 <button class="nav-tab" data-category="Financial Problems">Financial Problems</button>
                 <button class="nav-tab" data-category="Housing & Accommodation">Housing & Accommodation</button>
@@ -371,24 +373,52 @@
             document.getElementById('sortDropdown').classList.toggle('show');
         });
         
+        const sortLabels = {
+            hot: '🔥 Hot',
+            new: '✨ New',
+            top: '⬆️ Top',
+            rising: '📈 Rising'
+        };
+
+        const sortBtn = document.getElementById('sortBtn');
+        const sortAllBox = document.getElementById('sortAllBox');
+
         // Handle sort selection
         document.querySelectorAll('.dropdown-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const newSort = e.target.dataset.sort;
-                currentSort = newSort;
-                
-                // Update active item in dropdown
-                document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-                e.target.classList.add('active');
-                
-                // Update button text
-                const sortText = newSort === 'hot' ? '🔥 Hot' : newSort === 'new' ? '✨ New' : '📋 All';
-                document.getElementById('sortBtn').textContent = sortText;
-                
-                // Close dropdown
-                document.getElementById('sortDropdown').classList.remove('show');
+                applySort(newSort);
             });
         });
+
+        // All box to reset to the default feed
+        sortAllBox.addEventListener('click', () => {
+            applySort('hot', true);
+        });
+
+        function applySort(newSort, viaAllBox = false) {
+            currentSort = newSort;
+
+            // Update dropdown active states
+            document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            const activeItem = document.querySelector(`.dropdown-item[data-sort="${newSort}"]`);
+            if (activeItem) activeItem.classList.add('active');
+
+            // Update labels
+            sortBtn.textContent = sortLabels[newSort] || '🔥 Hot';
+
+            // Toggle All box active class
+            sortAllBox.classList.toggle('active', viaAllBox);
+            if (!viaAllBox) {
+                sortAllBox.classList.remove('active');
+            }
+
+            // Close dropdown
+            document.getElementById('sortDropdown').classList.remove('show');
+
+            // Fetch fresh data for the chosen sort
+            fetchAndCategorize();
+        }
         
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
