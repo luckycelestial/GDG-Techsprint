@@ -3,13 +3,15 @@ from flask_cors import CORS
 import requests
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+genai.configure(api_key=GEMINI_API_KEY)
 
 @app.route('/api/reddit/<subreddit>', methods=['GET'])
 def fetch_reddit(subreddit):
@@ -33,50 +35,46 @@ def fetch_reddit(subreddit):
 
 @app.route('/api/categorize', methods=['POST'])
 def categorize_posts():
-    """Categorize posts using Perplexity AI."""
+    """Categorize posts using Google Gemini AI."""
     try:
         data = request.json
         posts = data.get('posts', [])
         
         categories = [
-            'Academic Stress',
+            'Academic Issues',
+            'Financial Problems',
+            'Housing & Accommodation',
             'Social & Relationships',
-            'Financial Struggles',
             'Mental Health',
-            'Career Anxiety',
-            'Living Situations',
+            'Food & Dining',
+            'Transportation',
             'Other'
         ]
         
         categorized_posts = []
         
+        # Use Gemini model
+        model = genai.GenerativeModel('gemini-pro')
+        
         for post in posts:
             try:
-                response = requests.post('https://api.perplexity.ai/chat/completions', {
-                    'model': 'llama-3.1-sonar-small-128k-online',
-                    'messages': [{
-                        'role': 'user',
-                        'content': f"Categorize this college student problem into exactly one of these categories: {', '.join(categories)}. Respond with only the category name.\n\nProblem: {post['title']}\n\n{post['content']}"
-                    }],
-                    'max_tokens': 20,
-                    'temperature': 0.1
-                }, headers={
-                    'Authorization': f'Bearer {PERPLEXITY_API_KEY}',
-                    'Content-Type': 'application/json'
-                })
+                prompt = f"""Categorize this college student problem into exactly ONE of these categories: {', '.join(categories)}. 
+Respond with ONLY the category name, nothing else.
+
+Problem Title: {post['title']}
+Problem Details: {post['content']}"""
                 
-                if response.status_code == 200:
-                    result = response.json()
-                    category = result['choices'][0]['message']['content'].strip()
-                    categorized_posts.append({
-                        **post,
-                        'category': category if category in categories else 'Other'
-                    })
-                else:
-                    categorized_posts.append({
-                        **post,
-                        'category': 'Other'
-                    })
+                response = model.generate_content(prompt)
+                category = response.text.strip()
+                
+                # Validate category
+                if category not in categories:
+                    category = 'Other'
+                
+                categorized_posts.append({
+                    **post,
+                    'category': category
+                })
             except Exception as e:
                 print(f"Categorization error: {e}")
                 categorized_posts.append({
