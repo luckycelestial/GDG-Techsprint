@@ -180,6 +180,38 @@
             font-size: 12px;
             font-weight: 500;
         }
+        .severity-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .severity-high {
+            background: #dc3545;
+            color: white;
+        }
+        .severity-medium {
+            background: #ffc107;
+            color: #000;
+        }
+        .severity-low {
+            background: #28a745;
+            color: white;
+        }
+        .nav-tab.severity-high-tab.active {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+        .nav-tab.severity-medium-tab.active {
+            background: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+        .nav-tab.severity-low-tab.active {
+            background: #28a745;
+            border-color: #28a745;
+        }
         .timestamp {
             color: #28a745;
             font-weight: 600;
@@ -218,6 +250,15 @@
             </div>
         </div>
         
+        <div class="navbar">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-severity="All">🔥 All Severity</button>
+                <button class="nav-tab severity-high-tab" data-severity="High">🚨 High Severity</button>
+                <button class="nav-tab severity-medium-tab" data-severity="Medium">⚠️ Medium Severity</button>
+                <button class="nav-tab severity-low-tab" data-severity="Low">💡 Low Severity</button>
+            </div>
+        </div>
+        
         <div class="content">
             <div id="loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
@@ -233,6 +274,7 @@
         let autoRefreshInterval = null;
         let allPosts = [];
         let currentFilter = 'All';
+        let currentSeverityFilter = 'All';
         
         const categoryNames = [
             'Academic Issues',
@@ -256,13 +298,43 @@
             window.location.href = 'analytics.html';
         });
         
-        document.querySelectorAll('.nav-tab').forEach(tab => {
+        document.querySelectorAll('.nav-tab[data-category]').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 currentFilter = e.target.dataset.category;
                 updateActiveTab(e.target);
                 displayPosts();
             });
         });
+        
+        document.querySelectorAll('.nav-tab[data-severity]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                currentSeverityFilter = e.target.dataset.severity;
+                updateActiveSeverityTab(e.target);
+                displayPosts();
+            });
+        });
+        
+        function updateActiveSeverityTab(activeTab) {
+            document.querySelectorAll('.nav-tab[data-severity]').forEach(t => t.classList.remove('active'));
+            activeTab.classList.add('active');
+        }
+        
+        function categorizeSeverity(post) {
+            const text = (post.title + ' ' + post.content).toLowerCase();
+            const severityKeywords = {
+                high: ['failing', 'crisis', 'emergency', 'desperate', 'suicidal', 'broke', 'evicted', 'depressed', 'anxiety attack', 'kicked out', 'homeless', 'dropping out'],
+                medium: ['struggling', 'difficult', 'worried', 'stressed', 'anxious', 'problem', 'concerned', 'trouble', 'hard time', 'overwhelmed'],
+                low: ['advice', 'help', 'question', 'wondering', 'considering', 'tips', 'suggestions', 'recommendations']
+            };
+            
+            if (severityKeywords.high.some(keyword => text.includes(keyword))) {
+                return 'High';
+            } else if (severityKeywords.medium.some(keyword => text.includes(keyword))) {
+                return 'Medium';
+            } else {
+                return 'Low';
+            }
+        }
 
         async function fetchAndCategorize() {
             document.getElementById('loading').style.display = 'block';
@@ -315,11 +387,13 @@
             for (const post of posts) {
                 // Skip AI for now, use fallback categorization
                 const categories = [fallbackCategorize(post)];
+                const severity = categorizeSeverity(post);
                 categorizedPosts.push({
                     ...post,
-                    categories: categories
+                    categories: categories,
+                    severity: severity
                 });
-                console.log('Categorized post:', post.title, 'as', categories);
+                console.log('Categorized post:', post.title, 'as', categories, 'severity:', severity);
             }
             
             return categorizedPosts;
@@ -393,6 +467,9 @@
             if (currentFilter !== 'All') {
                 filteredPosts = allPosts.filter(post => post.categories.includes(currentFilter));
             }
+            if (currentSeverityFilter !== 'All') {
+                filteredPosts = filteredPosts.filter(post => post.severity === currentSeverityFilter);
+            }
             
             // Hide stats
             document.getElementById('stats').style.display = 'none';
@@ -423,6 +500,9 @@
                 const contentToShow = isExpanded ? post.content : post.shortContent;
                 const expandText = isExpanded ? 'Show Less' : 'Show More';
                 
+                const severityClass = `severity-${post.severity.toLowerCase()}`;
+                const severityIcon = post.severity === 'High' ? '🚨' : post.severity === 'Medium' ? '⚠️' : '💡';
+                
                 postDiv.innerHTML = `
                     <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 12px;">${escapeHtml(post.title)}</div>
                     <div class="post-content-area" style="color: #666; line-height: 1.6; margin-bottom: 15px;">${escapeHtml(contentToShow)}</div>
@@ -432,7 +512,8 @@
                         <span style="margin-left: 15px;">⬆️ ${post.score}</span>
                         <span style="margin-left: 15px;">🕒 ${formatTime(post.created)}</span>
                     </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                        <span class="severity-badge ${severityClass}">${severityIcon} ${post.severity} Severity</span>
                         ${post.categories.map(cat => `<span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px;">${cat}</span>`).join('')}
                     </div>
                 `;
