@@ -551,19 +551,40 @@
                 'Other': 0
             };
             
+            const severityCounts = {
+                'All': allPosts.length,
+                'High': 0,
+                'Medium': 0,
+                'Low': 0
+            };
+            
             allPosts.forEach(post => {
                 post.categories.forEach(category => {
                     if (categoryCounts[category] !== undefined) {
                         categoryCounts[category]++;
                     }
                 });
+                
+                if (post.severity && severityCounts[post.severity] !== undefined) {
+                    severityCounts[post.severity]++;
+                }
             });
             
-            document.querySelectorAll('.nav-tab').forEach(tab => {
+            // Update category tabs
+            document.querySelectorAll('.nav-tab[data-category]').forEach(tab => {
                 const category = tab.dataset.category;
                 const count = categoryCounts[category] || 0;
                 const baseName = category === 'All' ? 'All' : category;
                 tab.textContent = `${baseName} (${count})`;
+            });
+            
+            // Update severity tabs
+            document.querySelectorAll('.nav-tab[data-severity]').forEach(tab => {
+                const severity = tab.dataset.severity;
+                const count = severityCounts[severity] || 0;
+                const icon = severity === 'All' ? '🔥' : severity === 'High' ? '🚨' : severity === 'Medium' ? '⚠️' : '💡';
+                const baseName = severity === 'All' ? 'All Severity' : `${severity} Severity`;
+                tab.textContent = `${icon} ${baseName} (${count})`;
             });
         }
 
