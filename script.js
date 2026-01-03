@@ -1,7 +1,5 @@
-// API Configuration - works for both local and production environments
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : 'https://gdg-techsprint-production-7669.up.railway.app';
+// API Configuration - force production backend (no localhost fallback)
+const API_BASE_URL = 'https://gdg-techsprint-production-7669.up.railway.app';
 
 class CollegeStudentProblemTracker {
     constructor() {
