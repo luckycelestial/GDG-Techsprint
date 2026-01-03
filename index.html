@@ -212,6 +212,66 @@
             background: #28a745;
             border-color: #28a745;
         }
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+            margin: 5px;
+        }
+        .dropdown-btn {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dropdown-btn:hover {
+            transform: translateY(-2px);
+            background: #5568d3;
+        }
+        .dropdown-btn::after {
+            content: '▼';
+            font-size: 10px;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            padding: 12px 0;
+            z-index: 1;
+            border-radius: 8px;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+        }
+        .dropdown-content.show {
+            display: block;
+        }
+        .dropdown-item {
+            color: #333;
+            padding: 10px 16px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+            padding-left: 20px;
+        }
+        .dropdown-item.active {
+            background-color: #667eea;
+            color: white;
+        }
         .timestamp {
             color: #28a745;
             font-weight: 600;
@@ -238,7 +298,14 @@
 
         <div class="navbar">
             <div class="nav-tabs">
-                <button class="nav-tab active" data-category="All">All</button>
+                <div class="dropdown-container">
+                    <button class="dropdown-btn" id="sortBtn">All</button>
+                    <div class="dropdown-content" id="sortDropdown">
+                        <div class="dropdown-item active" data-sort="hot">🔥 Hot</div>
+                        <div class="dropdown-item" data-sort="new">✨ New</div>
+                        <div class="dropdown-item" data-sort="all">📋 All</div>
+                    </div>
+                </div>
                 <button class="nav-tab" data-category="Academic Issues">Academic Issues</button>
                 <button class="nav-tab" data-category="Financial Problems">Financial Problems</button>
                 <button class="nav-tab" data-category="Housing & Accommodation">Housing & Accommodation</button>
@@ -275,6 +342,7 @@
         let allPosts = [];
         let currentFilter = 'All';
         let currentSeverityFilter = 'All';
+        let currentSort = 'hot';
         
         const categoryNames = [
             'Academic Issues',
@@ -298,12 +366,35 @@
             window.location.href = 'analytics.html';
         });
         
-        document.querySelectorAll('.nav-tab[data-category]').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                currentFilter = e.target.dataset.category;
-                updateActiveTab(e.target);
-                displayPosts();
+        // Toggle dropdown menu
+        document.getElementById('sortBtn').addEventListener('click', () => {
+            document.getElementById('sortDropdown').classList.toggle('show');
+        });
+        
+        // Handle sort selection
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const newSort = e.target.dataset.sort;
+                currentSort = newSort;
+                
+                // Update active item in dropdown
+                document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Update button text
+                const sortText = newSort === 'hot' ? '🔥 Hot' : newSort === 'new' ? '✨ New' : '📋 All';
+                document.getElementById('sortBtn').textContent = sortText;
+                
+                // Close dropdown
+                document.getElementById('sortDropdown').classList.remove('show');
             });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.matches('#sortBtn') && !e.target.closest('.dropdown-container')) {
+                document.getElementById('sortDropdown').classList.remove('show');
+            }
         });
         
         document.querySelectorAll('.nav-tab[data-severity]').forEach(tab => {
@@ -359,7 +450,8 @@
         }
 
         async function fetchRedditPosts() {
-            const response = await fetch('http://localhost:3000/api/reddit/college');
+            const url = `http://localhost:3000/api/reddit/college?sort=${currentSort}`;
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Server error');
             
             const data = await response.json();

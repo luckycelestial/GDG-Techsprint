@@ -17,7 +17,14 @@ genai.configure(api_key=GEMINI_API_KEY)
 def fetch_reddit(subreddit):
     """Fetch posts from Reddit subreddit."""
     try:
-        url = f'https://www.reddit.com/r/{subreddit}/hot.json?limit=100'
+        # Get sort parameter from query string (default: hot)
+        sort_type = request.args.get('sort', 'hot')
+        
+        # Validate sort type
+        if sort_type not in ['hot', 'new', 'all']:
+            sort_type = 'hot'
+        
+        url = f'https://www.reddit.com/r/{subreddit}/{sort_type}.json?limit=100'
         headers = {
             'User-Agent': 'CollegeProblemTracker/1.0'
         }
