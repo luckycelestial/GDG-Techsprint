@@ -41,7 +41,7 @@ class CollegeStudentProblemTracker {
 
     async fetchRedditPosts(subreddit) {
         try {
-            const response = await fetch(`http://localhost:3000/api/reddit/${subreddit}`);
+            const response = await fetch(`http://localhost:5000/api/reddit/${subreddit}`);
             if (!response.ok) throw new Error('Failed to fetch Reddit posts from backend');
             
             const data = await response.json();
@@ -65,7 +65,7 @@ class CollegeStudentProblemTracker {
                 }));
         } catch (error) {
             console.error('Backend API Error:', error);
-            throw new Error('Failed to fetch Reddit posts. Make sure the backend server is running on port 3000.');
+            throw new Error('Failed to fetch Reddit posts. Make sure the Python backend server is running on port 5000.');
         }
     }
 
