@@ -1,34 +1,28 @@
-# Setup Instructions
+# College Problems Categorizer
 
-## Quick Start
+Single-page app that pulls posts from r/college, categorizes them into problem areas, tags severity, and lets you explore/filter. Optional analytics view reads cached data from the browser.
 
-1. **Install Node.js** (if not installed): Download from nodejs.org
+## Quick start
 
-2. **Install dependencies**:
-   ```
-   npm install
-   ```
+1) Install Node.js (https://nodejs.org)
+2) Install deps: `npm install`
+3) Run server: `npm start`
+4) Open: http://localhost:3000
 
-3. **Start the server**:
-   ```
-   npm start
-   ```
+## Usage
 
-4. **Open browser**: Go to `http://localhost:3000`
-
-## Features
-
-- **Real-time data** from r/college (most recent posts)
-- **Foolproof fetching** via local backend proxy
-- **Auto-refresh** every 30 seconds
-- **Live categorization** using Perplexity AI
-- **Time stamps** showing when posts were created
+- Sorting: choose Hot/New/Top/Rising from the dropdown; the All box resets to Hot.
+- Filters: category pills and severity pills filter the fetched posts client-side.
+- Expand posts: toggle long posts with Show More/Show Less.
+- Analyze: click Analyze Data to store the current dataset in `localStorage` (`collegeProblemsData`) and open analytics.html.
 
 ## How it works
 
-- Backend server (`server.js`) fetches from Reddit API
-- Frontend calls local backend (no CORS issues)
-- AI categorizes each post in real-time
-- Auto-refresh keeps data current
+- Backend: [server.js](server.js) serves static files and proxies Reddit at `/api/reddit/:subreddit?sort=hot|new|top|rising` (default hot) to avoid CORS issues.
+- Frontend: [index.html](index.html) fetches posts, applies keyword-based category/severity, renders filters, and manages state in-memory.
+- Data flow: fetch → categorize (fallback keywords) → render → optional analytics handoff via `localStorage`.
 
-This is the most reliable way to fetch Reddit data locally!
+## Notes
+
+- Requires internet access to reach reddit.com.
+- If you run a Python AI categorizer later, point the calls in `index.html` to it; current build uses the fallback keyword categorizer only.
