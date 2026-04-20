@@ -212,6 +212,27 @@
             background: #28a745;
             border-color: #28a745;
         }
+        .expand-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            cursor: pointer;
+            text-align: left;
+            transition: color 0.2s;
+        }
+        .expand-btn:hover {
+            color: #5568d3;
+            text-decoration: underline;
+        }
+        .expand-btn:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
         .dropdown-container {
             position: relative;
             display: inline-block;
@@ -643,14 +664,14 @@
                 postDiv.innerHTML = `
                     <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 12px;">${escapeHtml(post.title)}</div>
                     <div class="post-content-area" style="color: #666; line-height: 1.6; margin-bottom: 15px;">${escapeHtml(contentToShow)}</div>
-                    ${post.content.length > 300 ? `<div class="expand-btn" style="color: #667eea; font-size: 14px; font-weight: 600; margin-bottom: 15px; cursor: pointer;">${expandText}</div>` : ''}
+                    ${post.content.length > 300 ? `<button aria-expanded="${isExpanded}" class="expand-btn">${expandText}</button>` : ''}
                     <div style="font-size: 13px; color: #999; margin-bottom: 15px;">
-                        <span>👤 u/${post.author}</span>
-                        <span style="margin-left: 15px;">⬆️ ${post.score}</span>
-                        <span style="margin-left: 15px;">🕒 ${formatTime(post.created)}</span>
+                        <span aria-label="Author: u/${post.author}"><span aria-hidden="true">👤</span> u/${post.author}</span>
+                        <span style="margin-left: 15px;" aria-label="Score: ${post.score}"><span aria-hidden="true">⬆️</span> ${post.score}</span>
+                        <span style="margin-left: 15px;" aria-label="Posted: ${formatTime(post.created)}"><span aria-hidden="true">🕒</span> ${formatTime(post.created)}</span>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                        <span class="severity-badge ${severityClass}">${severityIcon} ${post.severity} Severity</span>
+                        <span class="severity-badge ${severityClass}" aria-label="Severity: ${post.severity}"><span aria-hidden="true">${severityIcon}</span> ${post.severity} Severity</span>
                         ${post.categories.map(cat => `<span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px;">${cat}</span>`).join('')}
                     </div>
                 `;

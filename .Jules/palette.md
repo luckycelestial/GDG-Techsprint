@@ -1,0 +1,3 @@
+## 2026-04-18 - Enhance Component Accessibility with Semantic Tags and ARIA
+**Learning:** When designing components like collapsible text or metadata sections, using generic tags like `<div>` or `<span>` without proper ARIA attributes limits accessibility for screen readers. Emojis often act as visual cues but create noise if read aloud by screen readers.
+**Action:** Use semantic `<button>` elements for interactive elements like 'Show More' functionality, ensuring to include `aria-expanded`. Hide decorative elements like emojis using `aria-hidden="true"` and provide context via `aria-label` on the parent wrapping element to guarantee clear auditory feedback for all users. Always add `focus-visible` styles for keyboard navigation.
